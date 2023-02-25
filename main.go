@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -63,6 +65,7 @@ func main() {
     c.Visit("https://atcoder.jp/contests/")
 
     fmt.Println(contests)
+    writeJSON(contests)
 
  // app := fiber.New()
 
@@ -92,4 +95,13 @@ func parseDuration(durationString string) int {
 
     duration := hours*60*60 + minutes*60
     return duration
+}
+
+func writeJSON(contests []Contest) {
+    f, err := json.MarshalIndent(contests, "", " ")
+    if err != nil {
+        fmt.Println("Failed to JSON encode contests slice")
+    }
+
+    os.WriteFile("contests.json", f, 0644)
 }
