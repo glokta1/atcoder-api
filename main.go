@@ -2,73 +2,69 @@ package main
 
 import (
 	"fmt"
+	"strconv"
+	"strings"
+	"time"
 
-	// "github.com/PuerkitoBio/goquery"
 	"github.com/gocolly/colly/v2"
 	// "github.com/gofiber/fiber/v2"
 )
 
 type Contest struct {
-	Name      string
-	Duration  int
-	StartTime int
-	Url       string
+	Name      string `json:"name"` 
+    Duration  int `json:"duration"`
+	StartTime int64 `json:"startTime"`
+	Link       string `json:"link"`
 }
 
-func main() {c := colly.NewCollector()
+func main() {
+    c := colly.NewCollector()
+    contests := make([]Contest, 0)
+        
     c.OnRequest(func(r *colly.Request) {
         fmt.Println("Visiting", r.URL)
     })
 
-    // c.OnHTML("table.table", func(h *colly.HTMLElement) {
-    //     h.DOM.Find("tbody").Find("tr").Each(func(i int, s *goquery.Selection) {
-    //         fmt.Println("Case #", i)
-    //         // fmt.Println(s.Html())
-    //         // startTime := s.Find(":nth-child(1)").Text()
-    //         // name := s.Find(":nth-child(2)").Text()
-    //         duration := s.Find(":nth-child(3)").Text()
-    //         // fmt.Println("contest name:", name) 
-    //         // fmt.Println("Time: ", startTime) 
-    //         fmt.Println("Duration:", duration)
-    //     })
-
-    //     // if err != nil {
-    //     //     fmt.Println(err)
-    //     // }
-
-    //     // fmt.Print(s)
-    // })
-
     c.OnHTML("div[id=contest-table-upcoming] > div.panel > div.table-responsive > table.table > tbody", func(h *colly.HTMLElement) {
         h.ForEach("tr", func(i int, h *colly.HTMLElement) {
             name := h.DOM.Find(":nth-child(2) > a").Text()
-            link, exists:= h.DOM.Find(":nth-child(2) > a").Attr("href")
+
+            baseURL := "https://atcoder.jp"
+            contestPath, exists:= h.DOM.Find(":nth-child(2) > a").Attr("href")
             if !exists {
                 fmt.Println("href attribute does not exist")
             }
+            link := baseURL + contestPath
 
-            startTime := h.DOM.Find(":nth-child(1) > a > time.fixtime-full").Text()
-            duration := h.DOM.ChildrenFiltered(":nth-child(3)").Text()
-            fmt.Println(name)
-            fmt.Println(link)
-            fmt.Println(startTime)
-            fmt.Println(duration)
-            fmt.Println("*************")
+            datetime := h.DOM.Find(":nth-child(1) > a > time.fixtime-full").Text()
+            // reference time written in datetime's format for later parsing
+            datetimeLayout := "2006-01-02 15:04:05-0700"
+            t, err := time.Parse(datetimeLayout, datetime)
+            if err != nil {
+                fmt.Println(err)
+            }
+            startTime := t.Unix()
+
+            durationString := h.DOM.ChildrenFiltered(":nth-child(3)").Text()
+            duration := parseDuration(durationString)
+
+            // initialize Contest struct var with parsed values
+            contest := Contest{
+                Name: name,
+                Duration: duration,
+                StartTime: startTime,
+                Link: link,
+            }
+
+            contests = append(contests, contest)
         })
-        // fmt.Println(name)
-        // h.DOM.Each(func(i int, s *goquery.Selection) {
-        //     name, err:= s.Find(":nth-child(1)").Children().Children().Html()
-        //     if err != nil {
-        //         fmt.Println(err)
-        //     }
-        //     fmt.Println(name)
-        //     fmt.Println("*************")
-        // })
     })
 
     c.Visit("https://atcoder.jp/contests/")
 
-	// app := fiber.New()
+    fmt.Println(contests)
+
+ // app := fiber.New()
 
 	// app.Get("/", func(c *fiber.Ctx) error {
 	// 	return c.SendString("Hello, World 👋!")
@@ -79,4 +75,21 @@ func main() {c := colly.NewCollector()
 	// })
 
 	// app.Listen(":3000")
+}
+
+// converts duration specified in HH:MM to seconds
+func parseDuration(durationString string) int {
+    parts := strings.Split(durationString, ":")
+    hours, err := strconv.Atoi(parts[0])
+    if err != nil {
+        fmt.Println("Couldn't parse hours")
+    }
+
+    minutes, err := strconv.Atoi(parts[1])
+    if err != nil {
+        fmt.Println("Couldn't parse minutes")
+    }
+
+    duration := hours*60*60 + minutes*60
+    return duration
 }
