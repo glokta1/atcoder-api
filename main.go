@@ -7,9 +7,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
+    "github.com/gofiber/fiber/v2"
 	"github.com/gocolly/colly/v2"
-	// "github.com/gofiber/fiber/v2"
 )
 
 type Contest struct {
@@ -19,7 +18,19 @@ type Contest struct {
 	Link       string `json:"link"`
 }
 
+
 func main() {
+    app := fiber.New()
+
+    app.Get("/api/upcoming", func(c *fiber.Ctx) error {
+        contests := getUpcomingContests()
+        return c.JSON(contests)
+    })
+
+    app.Listen(":3000")
+}
+
+func getUpcomingContests() []Contest {
     c := colly.NewCollector()
     contests := make([]Contest, 0)
         
@@ -64,20 +75,7 @@ func main() {
 
     c.Visit("https://atcoder.jp/contests/")
 
-    fmt.Println(contests)
-    writeJSON(contests)
-
- // app := fiber.New()
-
-	// app.Get("/", func(c *fiber.Ctx) error {
-	// 	return c.SendString("Hello, World 👋!")
-	// })
-
-	// app.Get("/lol", func(c *fiber.Ctx) error {
-	// 	return c.SendString("LOL😂")
-	// })
-
-	// app.Listen(":3000")
+    return contests
 }
 
 // converts duration specified in HH:MM to seconds
