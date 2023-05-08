@@ -1,15 +1,12 @@
 package main
 
 import (
-	// "encoding/json"
 	"fmt"
-	// "os"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/gocolly/colly/v2"
-	"github.com/gofiber/fiber/v2"
 )
 
 type Contest struct {
@@ -20,18 +17,8 @@ type Contest struct {
 }
 
 func main() {
-	app := fiber.New()
-
-	app.Get("/", func(c *fiber.Ctx) error {
-		return c.SendString("This is the unofficial Atcoder API")
-	})
-
-	app.Get("/api/upcoming", func(c *fiber.Ctx) error {
-		contests := getUpcomingContests()
-		return c.JSON(contests)
-	})
-
-	app.Listen(":3000")
+	contests := getUpcomingContests()
+	fmt.Println(contests)
 }
 
 func getUpcomingContests() []Contest {
