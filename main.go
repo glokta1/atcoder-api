@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -16,9 +18,19 @@ type Contest struct {
 	Link      string `json:"link"`
 }
 
-func main() {
+func home(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
 	contests := getUpcomingContests()
-	fmt.Println(contests)
+	encoder := json.NewEncoder(w)
+	encoder.Encode(contests)
+}
+
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", home)
+
+	fmt.Println("Listening on port 8000...")
+	http.ListenAndServe(":8000", mux)
 }
 
 func getUpcomingContests() []Contest {
